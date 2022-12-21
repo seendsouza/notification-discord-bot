@@ -64,7 +64,12 @@ class MessageSender:
 def check_for_updates(msg_sender: MessageSender):
     for contract in all_contracts:
         if contract_is_enabled(contract):
-            for renft_datum in [*contract.get_lendings(), *contract.get_rentings()]:
+            # Reversed because the order is originally descending,
+            # but we want observe in ascending order
+            for renft_datum in [
+                *reversed(contract.get_lendings()),
+                *reversed(contract.get_rentings()),
+            ]:
                 if renft_datum.has_been_observed():
                     continue
                 renft_datum.observe()
