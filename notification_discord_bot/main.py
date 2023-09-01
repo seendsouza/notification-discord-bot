@@ -38,11 +38,21 @@ class MessageSender:
     def send_discord_message(self, msg):
         logger.debug(msg.to_dict())
         if utils.discord_enabled():
-            self.discord_webhook.send(embed=msg)
+            try:
+                self.discord_webhook.send(embed=msg)
+            except discord.HTTPException as e:
+                if e.response.status == 429:
+                    retry_after = float(e.response.headers["Retry-After"])
+                    logger.info(f"Retrying after {str(retry_after)}s")
+                    time.sleep(retry_after)
+                    self.discord_webhook.send(embed=msg)
+                else:
+                    raise e
 
     def send_twitter_message(self, msg: constants.TwitterMessage):
         logger.debug(asdict(msg))
         if utils.twitter_enabled():
+            media_ids = []
             try:
                 res = requests.get(msg.image_url, timeout=20)
                 res.raise_for_status()
@@ -51,13 +61,13 @@ class MessageSender:
                 with NamedTemporaryFile(suffix=filename) as t:
                     t.write(res.content)
                     media = self.twitter_api.media_upload(t.name)
-                    media_ids = [media.media_ids]
+                    if media:
+                        media_ids = [media.media_key.split("_")[1]]
             except:
                 logger.exception(f"Cannot get image {msg.image_url}")
-                media_ids = []
             try:
                 self.twitter_api.update_status(status=msg.message, media_ids=media_ids)
-            except tweepy.errors.Forbidden:
+            except tweepy.Forbidden:
                 logger.exception("Tweepy 403")
 
 
@@ -79,6 +89,7 @@ def check_for_updates(msg_sender: MessageSender):
 
                 twitter_message = renft_datum.build_twitter_message()
                 msg_sender.send_twitter_message(twitter_message)
+                time.sleep(constants.RATE_LIMIT_SLEEP_TIME_S)
 
 
 def main():
