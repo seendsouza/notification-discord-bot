@@ -36,6 +36,7 @@ IPFS_GATEWAY_URL = "https://ipfs.io/ipfs"
 ETHEREUM_ALCHEMY_BASE_URL = f"https://eth-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
 POLYGON_ALCHEMY_BASE_URL = f"https://polygon-mainnet.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
 SLEEP_TIME_S = 20
+RATE_LIMIT_SLEEP_TIME_S = 0.07
 DEFAULT_PAGE_SIZE = 100
 
 PRICE_BITSIZE = 32
